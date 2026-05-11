@@ -38,6 +38,7 @@ local function drawTurtles(data)
 
         writeLine(label .. " [" .. online .. "]")
         writeLine("Status: " .. tostring(turtleData.status))
+        writeLine("Message: " .. tostring(turtleData.message))
         writeLine("Mode: " .. tostring(turtleData.mode))
         writeLine("Fuel: " .. tostring(turtleData.fuel))
         writeLine("Seen: " .. tostring(turtleData.age_seconds) .. "s ago")
