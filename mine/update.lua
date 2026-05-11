@@ -2,7 +2,12 @@ local files = {
     "main.lua",
     "history.lua",
     "fuel.lua",
-    "vein.lua"
+    "vein.lua",
+    "monitor.lua",
+    "status.lua",
+    "state.lua",
+    "update.lua",
+    "startup.lua"
 }
 
 local baseUrl = "https://raw.githubusercontent.com/muhlenlogan8/minecraft-turtle-miner/main/mine/"

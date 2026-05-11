@@ -1,4 +1,4 @@
-local API_URL = "https://YOUR-RAILWAY-APP.up.railway.app/turtles"
+local API_URL = "https://minecraft-turtle.up.railway.app/turtles"
 
 while true do
     term.clear()
