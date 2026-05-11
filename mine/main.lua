@@ -162,7 +162,7 @@ local function stripMine()
         end
         
         -- Demo stop condition
-        print(history.fuelNeededToBase())
+        --print(history.fuelNeededToBase())
         if history.fuelNeededToBase() >= 200 then
             break
         end
