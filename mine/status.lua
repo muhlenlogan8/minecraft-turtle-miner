@@ -1,6 +1,6 @@
 local Status = {}
 
-local API_URL = "https://minecraft-turtle.up.railway.app/updateStatus"
+local API_URL = "https://minecraft-turtle.up.railway.app/status"
 
 local currentStatus = "idle"
 local currentMode = "none"
