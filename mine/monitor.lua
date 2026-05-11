@@ -14,10 +14,18 @@ local function clear()
     monitor.setCursorPos(1, 1)
 end
 
-local function writeLine(text)
+local function writeLine(text, color)
+    if color then
+        monitor.setTextColor(color)
+    else
+        monitor.setTextColor(colors.white)
+    end
+
     local _, y = monitor.getCursorPos()
     monitor.write(text)
     monitor.setCursorPos(1, y + 1)
+
+    monitor.setTextColor(colors.white)
 end
 
 local function drawTurtles(data)
@@ -36,11 +44,25 @@ local function drawTurtles(data)
         local online = turtleData.online and "ONLINE" or "OFFLINE"
         local label = turtleData.label or ("Turtle " .. id)
 
-        writeLine(label .. " [" .. online .. "]")
+        if turtleData.online then
+            writeLine(label .. " [ONLINE]", colors.green)
+        else
+            writeLine(label .. " [OFFLINE]", colors.red)
+        end
+
         writeLine("Status: " .. tostring(turtleData.status))
         writeLine("Message: " .. tostring(turtleData.message))
         writeLine("Mode: " .. tostring(turtleData.mode))
-        writeLine("Fuel: " .. tostring(turtleData.fuel))
+
+        local fuel = tonumber(turtleData.fuel) or 0
+        if fuel < 100 then
+            writeLine("Fuel: " .. tostring(turtleData.fuel), colors.red)
+        elseif fuel < 300 then
+            writeLine("Fuel: " .. tostring(turtleData.fuel), colors.yellow)
+        else
+            writeLine("Fuel: " .. tostring(turtleData.fuel), colors.green)
+        end
+        
         writeLine("Seen: " .. tostring(turtleData.age_seconds) .. "s ago")
         writeLine("")
     end
