@@ -1,3 +1,5 @@
+local status = require("status")
+
 local Vein = {}
 
 local function isOre(block)
@@ -50,6 +52,7 @@ local function tryMineDown()
 end
 
 function Vein.mineConnectedOre()
+    status.heartbeat("Mining Ore Vein")
 
     -- Check vertical first
     tryMineDown()

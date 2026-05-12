@@ -55,7 +55,7 @@ end
 
 local function serviceAtBase()
     print("Returning to base for dropoff/refuel")
-    status.set("running", "servicing", "Returning to base for dropoff/refuel")
+    status.setStatus("running", "servicing", "Returning to base for dropoff/refuel")
     
     -- Go back to base but keep path so we can return to mining spot after
     history.returnToBase(true)
@@ -64,7 +64,7 @@ local function serviceAtBase()
     restockCoal()
     
     -- Return to exact strip-mining spot
-    status.set("running", "strip_mining", "Returned to work position")
+    status.setStatus("running", "strip_mining", "Returned to work position")
     history.goBackToWork()
     history.useMain()
     
@@ -113,7 +113,7 @@ end
 
 local function stripMine()
     history.useMain()
-    status.setStatus("running", "strip_mining", "Starting miner")
+    status.setStatus("running", "strip_mining", "Starting miner", history.fuelNeededToBase())
     
     print("Starting fuel:", turtle.getFuelLevel()) 
     while true do
@@ -129,14 +129,12 @@ local function stripMine()
         
         -- If ore is directly ahead, mine the vein
         if inspectForOre() then
-            status.heartbeat("Mining Ore Vein")
             vein.mineVein()
         end
         
         -- Check left side for ore
         turtle.turnLeft()
         if inspectForOre() then
-            status.heartbeat("Mining Ore Vein")
             vein.mineVein()
         end
         turtle.turnRight()
@@ -144,20 +142,17 @@ local function stripMine()
         -- Check right side for ore
         turtle.turnRight()
         if inspectForOre() then
-            status.heartbeat("Mining Ore Vein")
             vein.mineVein()
         end
         turtle.turnLeft()
         
         -- Check up for ore
         if inspectUpForOre() then
-            status.heartbeat("Mining Ore Vein")
             vein.mineVein()
         end
         
         -- Check down for ore
         if inspectDownForOre() then
-            status.heartbeat("Mining Ore Vein")
             vein.mineVein()
         end
         
@@ -168,9 +163,9 @@ local function stripMine()
         end
     end
     
-    status.set("running", "returning", "Returning to base")
+    status.setStatus("running", "returning", "Returning to base")
     history.returnToBase(false)
-    status.set("idle", "done", "Returned to base")
+    status.setStatus("idle", "done", "Returned to base")
 end
 
 stripMine()

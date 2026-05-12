@@ -63,6 +63,7 @@ local function drawTurtles(data)
             writeLine("Fuel: " .. tostring(turtleData.fuel), colors.green)
         end
         
+        writeLine("Fuel Needed To Base: " .. tostring(turtleData.fuel_needed_to_base))
         writeLine("Seen: " .. tostring(turtleData.age_seconds) .. "s ago")
         writeLine("")
     end
