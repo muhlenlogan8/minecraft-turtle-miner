@@ -25,7 +25,7 @@ local function goDownOne()
 end
 
 local function goDownToNextLevel()
-    for i = 1 DROP_PER_LEVEL do
+    for i = 1, DROP_PER_LEVEL do
         if needsService() then
             serviceAtBase()
         end
