@@ -165,6 +165,7 @@ local function stripMine()
     
     status.setStatus("running", "returning", "Returning to base")
     history.returnToBase(false)
+    dropOffItems()
     status.setStatus("idle", "done", "Returned to base")
 end
 

@@ -50,9 +50,9 @@ local function drawTurtles(data)
             writeLine(label .. " [OFFLINE]", colors.red)
         end
 
-        writeLine("Status: " .. tostring(turtleData.status))
-        writeLine("Message: " .. tostring(turtleData.message))
         writeLine("Mode: " .. tostring(turtleData.mode))
+        writeLine("Status: " .. tostring(turtleData.status))
+        writeLine("Last Message: " .. tostring(turtleData.message))
 
         local fuel = tonumber(turtleData.fuel) or 0
         if fuel < 100 then
@@ -63,7 +63,7 @@ local function drawTurtles(data)
             writeLine("Fuel: " .. tostring(turtleData.fuel), colors.green)
         end
         
-        writeLine("Fuel Needed To Base: " .. tostring(turtleData.fuel_needed_to_base))
+        writeLine("Steps From Base: " .. tostring(turtleData.steps_from_base))
         writeLine("Seen: " .. tostring(turtleData.age_seconds) .. "s ago")
         writeLine("")
     end

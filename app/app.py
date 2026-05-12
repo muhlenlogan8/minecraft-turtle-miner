@@ -22,7 +22,7 @@ def updateStatus():
         "status": data.get("status", "unknown"),
         "mode": data.get("mode", "unknown"),
         "fuel": data.get("fuel"),
-        "fuel_needed_to_base": data.get("fuel_needed_to_base"),
+        "steps_from_base": data.get("steps_from_base"),
         "message": data.get("message", ""),
         "last_seen": time.time()
     }
