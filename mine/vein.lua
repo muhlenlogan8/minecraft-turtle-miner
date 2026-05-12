@@ -6,8 +6,7 @@ local function isOre(block)
     if not block then return false end
 
     return string.find(block.name, "_ore") ~= nil or
-        block.name == "minecraft:ancient_debris" or
-        block.name == "minecraft:netherrack"
+        block.name == "minecraft:ancient_debris"
 
 end
 

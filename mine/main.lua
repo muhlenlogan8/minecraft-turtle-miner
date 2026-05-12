@@ -4,10 +4,38 @@ local vein = require("vein")
 local status = require("status")
 
 local SAFETY_FUEL = 40
+local STRIP_MINE_LENGTH = 10
+local DROP_PER_LEVEL = 2
+local MAX_LEVELS = 60 -- Optional safety limit just in case
 
 local function turnAround()
     turtle.turnRight()
     turtle.turnRight()
+end
+
+local function goDownOne()
+    turtle.digDown()
+
+    if history.down() then
+        return true
+    end
+
+    print("Count not mvoe down. Possibly bedrock.")
+    return false
+end
+
+local function goDownToNextLevel()
+    for i = 1 DROP_PER_LEVEL do
+        if needsService() then
+            serviceAtBase()
+        end
+
+        if not goDownOne() then
+            return false
+        end
+    end
+
+    return true
 end
 
 local function inventoryFull()
@@ -90,8 +118,7 @@ local function isOre(block)
     if not block then return false end
     
     return string.find(block.name, "_ore") ~= nil or
-        block.name == "minecraft:ancient_debris" or
-        block.name == "minecraft:netherrack"
+        block.name == "minecraft:ancient_debris"
 end
 
 local function inspectForOre()
@@ -111,62 +138,82 @@ local function inspectDownForOre()
     return found and isOre(block)
 end
 
+local function mineOneStep()
+    if needsService() then
+        serviceAtBase()
+    end
+
+    turtle.dig()
+    history.forward()
+
+    -- Check front
+    if inspectForOre() then
+        vein.mineVein()
+    end
+
+    -- Check left
+    turtle.turnLeft()
+    if inspectForOre() then
+        vein.mineVein()
+    end
+    turtle.turnRight()
+
+    -- Check right
+    turtle.turnRight()
+    if inspectForOre() then
+        vein.mineVein()
+    end
+    turtle.turnLeft()
+
+    -- Check up
+    if inspectUpForOre() then
+        vein.mineVein()
+    end
+
+    -- Check down
+    if inspectDownForOre() then
+        vein.mineVein()
+    end
+end
+
 local function stripMine()
     history.useMain()
     status.setStatus("running", "strip_mining", "Starting miner", history.fuelNeededToBase())
-    
-    print("Starting fuel:", turtle.getFuelLevel()) 
-    while true do
-        status.heartbeat("Strip Mining")
-        if needsService() then
-            serviceAtBase()
-            -- Do we have enough fuel for another go?
+
+    print("Starting fuel:", turtle.getFuelLevel())
+
+    local level = 1
+
+    while level <= MAX_LEVELS do
+        print("Starting level:", level)
+        status.setStatus("running", "strip_mining", "Mining level " .. level, history.fuelNeededToBase())
+
+        -- Mine 300 blocks forward on this level
+        for step = 1, STRIP_LENGTH do
+            status.heartbeat("Mining level " .. level .. " step " .. step .. "/" .. STRIP_LENGTH)
+            mineOneStep()
         end
-        
-        -- Mine forward tunnel
-        turtle.dig()
-        history.forward()
-        
-        -- If ore is directly ahead, mine the vein
-        if inspectForOre() then
-            vein.mineVein()
-        end
-        
-        -- Check left side for ore
-        turtle.turnLeft()
-        if inspectForOre() then
-            vein.mineVein()
-        end
-        turtle.turnRight()
-        
-        -- Check right side for ore
-        turtle.turnRight()
-        if inspectForOre() then
-            vein.mineVein()
-        end
-        turtle.turnLeft()
-        
-        -- Check up for ore
-        if inspectUpForOre() then
-            vein.mineVein()
-        end
-        
-        -- Check down for ore
-        if inspectDownForOre() then
-            vein.mineVein()
-        end
-        
-        -- Demo stop condition
-        --print(history.fuelNeededToBase())
-        if history.fuelNeededToBase() >= 200 then
+
+        -- After 300 blocks, go down 2 blocks
+        print("Finished level " .. level .. ". Going down " .. DROP_PER_LEVEL .. " blocks.")
+        status.setStatus("running", "descending", "Going down to next level", history.fuelNeededToBase())
+
+        if not goDownToNextLevel() then
+            print("Hit bottom or cannot go lower. Stopping.")
             break
         end
+
+        level = level + 1
     end
-    
-    status.setStatus("running", "returning", "Returning to base")
+
+    status.setStatus("running", "returning", "Returning to base", history.fuelNeededToBase())
+
     history.returnToBase(false)
+
     dropOffItems()
-    status.setStatus("idle", "done", "Returned to base")
+    restockCoal()
+
+    status.setStatus("idle", "done", "Returned to base", history.fuelNeededToBase())
 end
 
 stripMine()
