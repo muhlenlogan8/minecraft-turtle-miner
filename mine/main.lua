@@ -4,7 +4,7 @@ local vein = require("vein")
 local status = require("status")
 
 local SAFETY_FUEL = 40
-local STRIP_MINE_LENGTH = 10
+local STRIP_LENGTH = 10
 local DROP_PER_LEVEL = 2
 local MAX_LEVELS = 60 -- Optional safety limit just in case
 
