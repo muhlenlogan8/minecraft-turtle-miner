@@ -24,20 +24,6 @@ local function goDownOne()
     return false
 end
 
-local function goDownToNextLevel()
-    for i = 1, DROP_PER_LEVEL do
-        if needsService() then
-            serviceAtBase()
-        end
-
-        if not goDownOne() then
-            return false
-        end
-    end
-
-    return true
-end
-
 local function inventoryFull()
     for slot = 1, 16 do
         if turtle.getItemCount(slot) == 0 then
@@ -174,6 +160,20 @@ local function mineOneStep()
     if inspectDownForOre() then
         vein.mineVein()
     end
+end
+
+local function goDownToNextLevel()
+    for i = 1, DROP_PER_LEVEL do
+        if needsService() then
+            serviceAtBase()
+        end
+
+        if not goDownOne() then
+            return false
+        end
+    end
+
+    return true
 end
 
 local function stripMine()
