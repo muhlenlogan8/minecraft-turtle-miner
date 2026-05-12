@@ -53,18 +53,48 @@ local function dropOffItems()
     turnAround()
 end
 
+local function isChest(block)
+    if not block then return false end
+
+    return block.name == "minecraft:chest"
+        or block.name == "minecraft:trapped_chest"
+        or string.find(block.name, "chest") ~= nil
+end
+
+local function trySuckFromChest()
+    local found, block = turtle.inspect()
+
+    if found and isChest(block) then
+        turtle.suck()
+        fuel.refuelFromInventory()
+        return true
+    end
+
+    return false
+end
+
 local function restockCoal()
-    -- Coal/refuel chest is to the turtle's right
+    -- Check for right chest
     turtle.turnRight()
+
+    if trySuckFromChest() then
+        turtle.turnLeft()
+        return true
+    end
     
-    -- Pull coal from chest
-    turtle.suck()
-    
-    -- Refuel using coal in inventory
-    fuel.refuelFromInventory()
-    
-    -- Face strip mine direction again
-    turtle.turnLeft()
+    -- If no chest on right, check left
+    turnAround()
+
+    if trySuckFromChest() then
+        turtle.turnRight()
+        return true
+    end
+
+    -- No chest found, face strip mine direction again
+    turtle.turnRight()
+
+    print("No coal chest found for refueling!")
+    return false
 end
 
 local function serviceAtBase(fullService)
