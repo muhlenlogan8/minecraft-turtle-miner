@@ -67,7 +67,7 @@ local function restockCoal()
     turtle.turnLeft()
 end
 
-local function serviceAtBase()
+local function serviceAtBase(restock = true)
     print("Returning to base for dropoff/refuel")
     status.setStatus("running", "servicing", "Returning to base for dropoff/refuel")
     
@@ -75,7 +75,7 @@ local function serviceAtBase()
     history.returnToBase(true)
     
     dropOffItems()
-    restockCoal()
+    if restock then restockCoal() end
     
     -- Return to exact strip-mining spot
     status.setStatus("running", "strip_mining", "Returned to work position")
@@ -194,7 +194,10 @@ local function stripMine()
             mineOneStep()
         end
 
-        -- After 300 blocks, go down 2 blocks
+        -- After 300 blocks service at base before going down to next level
+        serviceAtBase(false)
+
+        -- After service, go down 2 blocks
         print("Finished level " .. level .. ". Going down " .. DROP_PER_LEVEL .. " blocks.")
         status.setStatus("running", "descending", "Going down to next level", history.fuelNeededToBase())
 
