@@ -67,7 +67,7 @@ local function restockCoal()
     turtle.turnLeft()
 end
 
-local function serviceAtBase(restock = true)
+local function serviceAtBase(restock)
     print("Returning to base for dropoff/refuel")
     status.setStatus("running", "servicing", "Returning to base for dropoff/refuel")
     
@@ -126,7 +126,7 @@ end
 
 local function mineOneStep()
     if needsService() then
-        serviceAtBase()
+        serviceAtBase(true)
     end
 
     turtle.dig()
@@ -165,7 +165,7 @@ end
 local function goDownToNextLevel()
     for i = 1, DROP_PER_LEVEL do
         if needsService() then
-            serviceAtBase()
+            serviceAtBase(true)
         end
 
         if not goDownOne() then
