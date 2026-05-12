@@ -190,7 +190,7 @@ local function stripMine()
 
         -- Mine 300 blocks forward on this level
         for step = 1, STRIP_LENGTH do
-            status.heartbeat("Mining level " .. level .. " step " .. step .. "/" .. STRIP_LENGTH)
+            status.heartbeat("L" .. level .. " | step " .. step .. "/" .. STRIP_LENGTH)
             mineOneStep()
         end
 
