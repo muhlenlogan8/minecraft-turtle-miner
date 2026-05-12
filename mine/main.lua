@@ -188,7 +188,9 @@ local function stripMine()
 
     local level = 1
 
-    while level <= MAX_LEVELS do
+    local shouldStop = false
+
+    while level <= MAX_LEVELS and not shouldStop do
         print("Starting level:", level)
         status.setStatus("running", "strip_mining", "Mining level " .. level, history.fuelNeededToBase())
 
@@ -205,9 +207,12 @@ local function stripMine()
         print("Finished level " .. level .. ". Going down " .. DROP_PER_LEVEL .. " blocks.")
         status.setStatus("running", "descending", "Going down to next level", history.fuelNeededToBase())
 
-        if not goDownToNextLevel() then
-            print("Hit bottom or cannot go lower. Stopping.")
-            break
+        for drop = 1, level do
+            if not goDownToNextLevel() then
+                print("Hit bottom or cannot go lower. Stopping.")
+                shouldStop = true
+                break
+            end
         end
 
         level = level + 1
