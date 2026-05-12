@@ -8,8 +8,8 @@ local fuelNeeded = 0
 
 function Status.setStatus(status, mode, message, fuelNeededToBase)
     currentStatus = status
-    currentMode = mode or CurrentMode
-    fuelNeeded = fuelNeededToBase
+    currentMode = mode or currentMode
+    fuelNeeded = fuelNeededToBase or 0
     Status.heartbeat(message)
 end
 

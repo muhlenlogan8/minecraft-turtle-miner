@@ -1,3 +1,5 @@
+local Status = require("status")
+
 local History = {}
 
 History.mainReverse = {}
@@ -27,7 +29,6 @@ local function run(move)
     elseif move == "turnRight" then turtle.turnRight(); return true
     end
 end
-
 local function save(move)
     local reverseMove = reverseOf[move]
 
@@ -51,11 +52,13 @@ end
 
 function History.useMain()
     History.active = "main"
+    Status.setStatus("idle", nil, "Using main path", 0)
 end
 
 function History.useBranch()
     History.branchMoves = {}
     History.active = "branch"
+    Status.setStatus("branching", nil, "Started branch", 0)
 end
 
 function History.forward() return moveTracked("forward") end
@@ -78,8 +81,11 @@ local function fuelNeeded(moves)
 end
 
 function History.returnToBase(keepPath)
+    Status.setStatus("returning", nil, "Returning to base", History.fuelNeededToBase())
+
     for i = #History.mainReverse, 1, -1 do
         run(History.mainReverse[i])
+        Status.heartbeat("Returning to base")
     end
 
     if not keepPath then
@@ -89,15 +95,20 @@ function History.returnToBase(keepPath)
 end
 
 function History.goBackToWork()
+    Status.setStatus("resuming", nil, "Going back to work", History.fuelNeededForAnotherGo())
+
     for i = 1, #History.mainForward do
         run(History.mainForward[i])
+        Status.heartbeat("Going back to work")
     end
 end
 
 function History.returnToStrip()
-    for i = #History.branchMoves, 1, -1 do
+    Status.setStatus("returning_branch", nil, "Returning to strip", 0)
 
+    for i = #History.branchMoves, 1, -1 do
         run(History.branchMoves[i])
+        Status.heartbeat("Returning to strip")
     end
 
     History.branchMoves = {}

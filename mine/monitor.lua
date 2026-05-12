@@ -31,8 +31,20 @@ end
 local function drawTurtles(data)
     clear()
 
-    writeLine("Turtle Monitor")
-    writeLine("==============")
+    local function center(text)
+        local w, _ = monitor.getSize()
+        local pad = math.max(0, math.floor((w - string.len(text)) / 2))
+        return string.rep(" ", pad) .. text
+    end
+
+    local function truncate(s, n)
+        s = tostring(s or "")
+        if string.len(s) <= n then return s end
+        return string.sub(s, 1, n - 3) .. "..."
+    end
+
+    writeLine(center("Turtle Monitor"))
+    writeLine(center("=============="))
     writeLine("")
 
     if not data or next(data) == nil then
@@ -41,8 +53,10 @@ local function drawTurtles(data)
     end
 
     for id, turtleData in pairs(data) do
-        local online = turtleData.online and "ONLINE" or "OFFLINE"
         local label = turtleData.label or ("Turtle " .. id)
+        local statusText = tostring(turtleData.status or "unknown")
+        local modeText = tostring(turtleData.mode or "unknown")
+        local message = truncate(turtleData.message or "", 40)
 
         if turtleData.online then
             writeLine(label .. " [ONLINE]", colors.green)
@@ -50,22 +64,18 @@ local function drawTurtles(data)
             writeLine(label .. " [OFFLINE]", colors.red)
         end
 
-        writeLine("Mode: " .. tostring(turtleData.mode))
-        writeLine("Status: " .. tostring(turtleData.status))
-        writeLine("Last Message: " .. tostring(turtleData.message))
+        writeLine("ID: " .. tostring(id) .. "  Mode: " .. modeText)
+        writeLine("Status: " .. statusText)
+        writeLine("Msg: " .. message)
 
         local fuel = tonumber(turtleData.fuel) or 0
-        if fuel < 100 then
-            writeLine("Fuel: " .. tostring(turtleData.fuel), colors.red)
-        elseif fuel < 300 then
-            writeLine("Fuel: " .. tostring(turtleData.fuel), colors.yellow)
-        else
-            writeLine("Fuel: " .. tostring(turtleData.fuel), colors.green)
-        end
-        
-        writeLine("Steps From Base: " .. tostring(turtleData.steps_from_base))
+        local steps = tostring(turtleData.steps_from_base or "-")
+        local fuelColor = colors.green
+        if fuel < 100 then fuelColor = colors.red elseif fuel < 300 then fuelColor = colors.yellow end
+        writeLine("Fuel: " .. tostring(turtleData.fuel) .. "  StepsFromBase: " .. steps, fuelColor)
+
         writeLine("Seen: " .. tostring(turtleData.age_seconds) .. "s ago")
-        writeLine("")
+        writeLine(string.rep("-", 20))
     end
 end
 
