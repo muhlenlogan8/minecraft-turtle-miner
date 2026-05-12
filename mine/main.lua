@@ -97,6 +97,41 @@ local function restockCoal()
     return false
 end
 
+local function waitForSafeFuel()
+    local attempts = 0
+
+    while turtle.getFuelLevel() < SAFETY_FUEL do
+        attempts = attempts + 1
+        status.setStatus(
+            "waiting_for_fuel",
+            "servicing",
+            "Waiting for coal (attempt " .. attempts .. ")",
+            history.fuelNeededToBase()
+        )
+
+        if restockCoal() then
+            fuel.refuelFromInventory()
+        end
+
+        status.heartbeat(
+            "Waiting for coal | fuel " .. turtle.getFuelLevel() .. "/" .. SAFETY_FUEL
+        )
+
+        if turtle.getFuelLevel() >= SAFETY_FUEL then
+            break
+        end
+
+        sleep(2)
+    end
+
+    status.setStatus(
+        "running",
+        "servicing",
+        "Fuel restored to safe level",
+        history.fuelNeededToBase()
+    )
+end
+
 local function serviceAtBase(fullService)
     print("Returning to base for dropoff/refuel")
     status.setStatus("running", "servicing", "Returning to base for dropoff/refuel")
@@ -110,6 +145,9 @@ local function serviceAtBase(fullService)
     
     dropOffItems()
     if fullService then restockCoal() end
+    if turtle.getFuelLevel() < SAFETY_FUEL then
+        waitForSafeFuel()
+    end
     
     -- Return to exact strip-mining spot
     status.setStatus("running", "strip_mining", "Returned to work position")

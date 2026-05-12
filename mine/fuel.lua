@@ -1,5 +1,7 @@
 local Fuel = {}
 
+local status = require("status")
+
 local COAL_FUEL_VALUE = 80
 
 function Fuel.countCoal()
@@ -26,6 +28,7 @@ function Fuel.refuelFromInventory()
         local item = turtle.getItemDetail(slot)
         
         if item and item.name == "minecraft:coal" then
+            status.heartbeat("Refueling from coal inventory")
             turtle.select(slot)
             local count = item.count
             while count > 0 and turtle.getFuelLevel() < 1000 do

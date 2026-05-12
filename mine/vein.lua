@@ -11,9 +11,11 @@ local function isOre(block)
 end
 
 local function tryMineForward()
+    status.heartbeat("Checking vein ahead")
     local found, block = turtle.inspect()
 
     if found and isOre(block) then
+        status.heartbeat("Mining ore ahead")
         turtle.dig()
         turtle.forward()
 
@@ -24,9 +26,11 @@ local function tryMineForward()
 end
 
 local function tryMineUp()
+    status.heartbeat("Checking vein above")
     local found, block = turtle.inspectUp()
 
     if found and isOre(block) then
+        status.heartbeat("Mining ore above")
         turtle.digUp()
         turtle.up()
 
@@ -38,9 +42,11 @@ local function tryMineUp()
 end
 
 local function tryMineDown()
+    status.heartbeat("Checking vein below")
     local found, block = turtle.inspectDown()
 
     if found and isOre(block) then
+        status.heartbeat("Mining ore below")
         turtle.digDown()
         turtle.down()
 
