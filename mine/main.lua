@@ -20,7 +20,7 @@ local function goDownOne()
         return true
     end
 
-    print("Count not mvoe down. Possibly bedrock.")
+    print("Could not move down.")
     return false
 end
 
