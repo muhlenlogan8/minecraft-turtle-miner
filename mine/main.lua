@@ -224,13 +224,13 @@ local function stripMine()
         print("Starting level:", level)
         status.setStatus("running", "strip_mining", "Mining level " .. level, history.fuelNeededToBase())
 
-        -- Mine 300 blocks forward on this level
+        -- Mine 350 blocks forward on this level
         for step = 1, STRIP_LENGTH do
-            status.heartbeat("L" .. level .. " | step " .. step .. "/" .. STRIP_LENGTH)
+            status.heartbeat("Level " .. level .. " | step " .. step .. "/" .. STRIP_LENGTH)
             mineOneStep()
         end
 
-        -- After 300 blocks service at base before going down to next level
+        -- After 350 blocks service at base before going down to next level
         serviceAtBase(false)
 
         -- After service, go down 2 blocks
