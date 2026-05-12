@@ -67,19 +67,23 @@ local function restockCoal()
     turtle.turnLeft()
 end
 
-local function serviceAtBase(restock)
+local function serviceAtBase(fullService)
     print("Returning to base for dropoff/refuel")
     status.setStatus("running", "servicing", "Returning to base for dropoff/refuel")
     
-    -- Go back to base but keep path so we can return to mining spot after
-    history.returnToBase(true)
+    -- Go back to base but keep path if this is a full service (for returning to work position after)
+    if fullService then
+        history.returnToBase(true)
+    else
+        history.returnToBase(false)
+    end
     
     dropOffItems()
-    if restock then restockCoal() end
+    if fullService then restockCoal() end
     
     -- Return to exact strip-mining spot
     status.setStatus("running", "strip_mining", "Returned to work position")
-    history.goBackToWork()
+    if fullService then history.goBackToWork() end
     history.useMain()
     
     print("Returned to work position")
