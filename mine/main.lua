@@ -99,9 +99,11 @@ end
 
 local function waitForSafeFuel()
     local attempts = 0
+    local requiredFuel = math.max(SAFETY_FUEL, history.fuelNeededForAnotherGo())
 
-    while turtle.getFuelLevel() < SAFETY_FUEL do
+    while turtle.getFuelLevel() < requiredFuel do
         attempts = attempts + 1
+        requiredFuel = math.max(SAFETY_FUEL, history.fuelNeededForAnotherGo())
         status.setStatus(
             "waiting_for_fuel",
             "servicing",
@@ -114,10 +116,10 @@ local function waitForSafeFuel()
         end
 
         status.heartbeat(
-            "Waiting for coal | fuel " .. turtle.getFuelLevel() .. "/" .. SAFETY_FUEL
+            "Waiting for coal | fuel " .. turtle.getFuelLevel() .. "/" .. requiredFuel
         )
 
-        if turtle.getFuelLevel() >= SAFETY_FUEL then
+        if turtle.getFuelLevel() >= requiredFuel then
             break
         end
 
