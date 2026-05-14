@@ -9,6 +9,12 @@ end
 
 monitor.setTextScale(0.5)
 
+-- Configuration
+local PAGE_INTERVAL = 5 -- seconds to show each page
+local COMPACT_MODE = true -- one-line-per-turtle when true
+
+local pageIndex = 1
+
 local function clear()
     monitor.clear()
     monitor.setCursorPos(1, 1)
@@ -52,34 +58,79 @@ local function drawTurtles(data)
         return
     end
 
-    for id, turtleData in pairs(data) do
-        local label = turtleData.label or ("Turtle " .. id)
-        local statusText = tostring(turtleData.status or "unknown")
-        local modeText = tostring(turtleData.mode or "unknown")
-        local message = truncate(turtleData.message or "", 40)
-        local levelText = tostring(turtleData.level or "-")
+    local w, h = monitor.getSize()
+    local headerLines = 3
 
-        if turtleData.online then
-            writeLine(label .. " [ONLINE]", colors.green)
-        else
-            writeLine(label .. " [OFFLINE]", colors.red)
+    if COMPACT_MODE then
+        -- Build stable list of turtles
+        local ids = {}
+        for id, _ in pairs(data) do table.insert(ids, id) end
+        table.sort(ids, function(a,b) return tostring(a) < tostring(b) end)
+
+        local rows = {}
+        for _, id in ipairs(ids) do
+            local t = data[id]
+            local label = truncate(t.label or ("T" .. id), 12)
+            local statusText = tostring(t.status or "unk")
+            local fuel = tonumber(t.fuel) or 0
+            local steps = tostring(t.steps_from_base or "-")
+            local age = tostring(t.age_seconds or "-")
+            local lvl = tostring(t.level or "-")
+
+            local statusShort = statusText
+            if string.len(statusShort) > 6 then statusShort = string.sub(statusShort,1,6) end
+
+            local fuelMark = tostring(fuel)
+            local line = string.format("%s %s | F:%s | D:%s | L:%s | %ss", label, statusShort, fuelMark, steps, lvl, age)
+            if string.len(line) > w then line = truncate(line, w) end
+            table.insert(rows, {line=line, online=not not t.online})
         end
 
-        writeLine("ID: " .. tostring(id) .. "  Mode: " .. modeText)
-        writeLine("Status: " .. statusText)
-        writeLine("Level: " .. levelText)
-        writeLine("Msg: " .. message)
+        local pageSize = math.max(1, h - headerLines - 1)
+        local totalPages = math.max(1, math.ceil(#rows / pageSize))
+        pageIndex = ((pageIndex - 1) % totalPages) + 1
+        local startIdx = (pageIndex - 1) * pageSize + 1
+        local endIdx = math.min(#rows, startIdx + pageSize - 1)
 
-        local fuel = tonumber(turtleData.fuel) or 0
-        local steps = tostring(turtleData.steps_from_base or "-")
-        local fuelColor = colors.green
-        local stepsColor = colors.cyan
-        if fuel < 100 then fuelColor = colors.red elseif fuel < 300 then fuelColor = colors.yellow end
-        writeLine("Fuel: " .. tostring(turtleData.fuel), fuelColor)
-        writeLine("Distance from base: " .. steps .. " blocks", stepsColor)
+        for i = startIdx, endIdx do
+            local r = rows[i]
+            local color = r.online and colors.white or colors.gray
+            writeLine(r.line, color)
+        end
 
-        writeLine("Seen: " .. tostring(turtleData.age_seconds) .. "s ago")
-        writeLine(string.rep("-", 20))
+        writeLine(string.rep("=", w))
+        writeLine(string.format("Page %d/%d  (%d turtles)", pageIndex, totalPages, #rows))
+    else
+        -- Verbose mode (existing layout)
+        for id, turtleData in pairs(data) do
+            local label = turtleData.label or ("Turtle " .. id)
+            local statusText = tostring(turtleData.status or "unknown")
+            local modeText = tostring(turtleData.mode or "unknown")
+            local message = truncate(turtleData.message or "", 40)
+            local levelText = tostring(turtleData.level or "-")
+
+            if turtleData.online then
+                writeLine(label .. " [ONLINE]", colors.green)
+            else
+                writeLine(label .. " [OFFLINE]", colors.red)
+            end
+
+            writeLine("ID: " .. tostring(id) .. "  Mode: " .. modeText)
+            writeLine("Status: " .. statusText)
+            writeLine("Level: " .. levelText)
+            writeLine("Msg: " .. message)
+
+            local fuel = tonumber(turtleData.fuel) or 0
+            local steps = tostring(turtleData.steps_from_base or "-")
+            local fuelColor = colors.green
+            local stepsColor = colors.cyan
+            if fuel < 100 then fuelColor = colors.red elseif fuel < 300 then fuelColor = colors.yellow end
+            writeLine("Fuel: " .. tostring(turtleData.fuel), fuelColor)
+            writeLine("Distance from base: " .. steps .. " blocks", stepsColor)
+
+            writeLine("Seen: " .. tostring(turtleData.age_seconds) .. "s ago")
+            writeLine(string.rep("-", 20))
+        end
     end
 end
 
@@ -92,6 +143,19 @@ while true do
 
         local data = textutils.unserializeJSON(body)
         drawTurtles(data)
+        -- advance page only when in compact mode and multiple pages
+        if COMPACT_MODE then
+            -- determine pages based on monitor height
+            local _, h = monitor.getSize()
+            local pageSize = math.max(1, h - 3 - 1)
+            local count = 0 for _ in pairs(data) do count = count + 1 end
+            local totalPages = math.max(1, math.ceil(count / pageSize))
+            if totalPages > 1 then
+                pageIndex = pageIndex % totalPages + 1
+            else
+                pageIndex = 1
+            end
+        end
     else
         clear()
         writeLine("Turtle Monitor")
@@ -100,5 +164,5 @@ while true do
         writeLine("Failed to reach backend")
     end
 
-    sleep(5)
+    sleep(PAGE_INTERVAL)
 end
