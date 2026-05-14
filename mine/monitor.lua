@@ -73,8 +73,10 @@ local function drawTurtles(data)
         local fuel = tonumber(turtleData.fuel) or 0
         local steps = tostring(turtleData.steps_from_base or "-")
         local fuelColor = colors.green
+        local stepsColor = colors.cyan
         if fuel < 100 then fuelColor = colors.red elseif fuel < 300 then fuelColor = colors.yellow end
         writeLine("Fuel: " .. tostring(turtleData.fuel), fuelColor)
+        writeLine("Distance from base: " .. steps .. " blocks", stepsColor)
 
         writeLine("Seen: " .. tostring(turtleData.age_seconds) .. "s ago")
         writeLine(string.rep("-", 20))

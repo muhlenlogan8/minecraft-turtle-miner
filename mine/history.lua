@@ -36,6 +36,7 @@ local function save(move)
         if isFuelMove(move) then
             table.insert(History.mainReverse, reverseMove)
             table.insert(History.mainForward, move)
+            Status.setStepsFromBase(History.fuelNeededToBase())
         end
     else
         table.insert(History.branchMoves, reverseMove)
@@ -52,7 +53,7 @@ end
 
 function History.useMain()
     History.active = "main"
-    Status.setStatus("idle", nil, "Using main path", 0)
+    Status.setStatus("idle", nil, "Using main path", History.fuelNeededToBase())
 end
 
 function History.useBranch()
@@ -85,8 +86,11 @@ function History.returnToBase(keepPath)
 
     for i = #History.mainReverse, 1, -1 do
         run(History.mainReverse[i])
+        Status.setStepsFromBase(i - 1)
         Status.heartbeat("Returning to base")
     end
+
+    Status.setStepsFromBase(0)
 
     if not keepPath then
         History.mainReverse = {}
@@ -99,6 +103,7 @@ function History.goBackToWork()
 
     for i = 1, #History.mainForward do
         run(History.mainForward[i])
+        Status.setStepsFromBase(i)
         Status.heartbeat("Going back to work")
     end
 end
@@ -113,11 +118,13 @@ function History.returnToStrip()
 
     History.branchMoves = {}
     History.active = "main"
+    Status.setStepsFromBase(History.fuelNeededToBase())
 end
 
 function History.clearBranch()
     History.branchMoves = {}
     History.active = "main"
+    Status.setStepsFromBase(History.fuelNeededToBase())
 end
 
 function History.fuelNeededToBase()

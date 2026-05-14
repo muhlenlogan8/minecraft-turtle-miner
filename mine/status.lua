@@ -7,10 +7,16 @@ local currentMode = "none"
 local fuelNeeded = 0
 local currentLevel = nil
 
+function Status.setStepsFromBase(stepsFromBase)
+    fuelNeeded = math.max(0, tonumber(stepsFromBase) or 0)
+end
+
 function Status.setStatus(status, mode, message, fuelNeededToBase, level)
     currentStatus = status
     currentMode = mode or currentMode
-    fuelNeeded = fuelNeededToBase or 0
+    if fuelNeededToBase ~= nil then
+        Status.setStepsFromBase(fuelNeededToBase)
+    end
     if level ~= nil then
         currentLevel = level
     end
