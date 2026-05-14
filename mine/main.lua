@@ -3,7 +3,7 @@ local fuel = require("fuel")
 local vein = require("vein")
 local status = require("status")
 
-local SAFETY_FUEL = 40
+local SAFETY_FUEL = 80
 local STRIP_LENGTH = 350
 local DROP_PER_LEVEL = 2
 local MAX_LEVELS = 60 -- Optional safety limit just in case
@@ -133,17 +133,25 @@ local function waitForSafeFuel()
     )
 end
 
-local function serviceAtBase()
+local function serviceAtBase(keepPath)
     print("Returning to base for dropoff/refuel")
     status.setStatus("running", "servicing", "Returning to base for dropoff/refuel")
     
-    -- Return to base and clear the current strip path.
-    history.returnToBase(false)
+    if keepPath then
+        history.returnToBase(true)
+    else
+        history.returnToBase(false)
+    end
     
     dropOffItems()
     restockCoal()
     if turtle.getFuelLevel() < math.max(SAFETY_FUEL, history.fuelNeededForAnotherGo()) then
         waitForSafeFuel()
+    end
+    
+    if keepPath then
+        status.setStatus("running", "strip_mining", "Returned to work position")
+        history.goBackToWork()
     end
     
     history.useMain()
@@ -192,7 +200,7 @@ end
 
 local function mineOneStep()
     if needsService() then
-        serviceAtBase()
+        serviceAtBase(true)
     end
 
     turtle.dig()
@@ -230,6 +238,10 @@ end
 
 local function goDownBlocks(blockCount)
     for i = 1, blockCount do
+        if needsService() then
+            serviceAtBase(true)
+        end
+
         if not goDownOne() then
             return false
         end
@@ -271,7 +283,7 @@ local function stripMine()
         end
 
         -- After 350 blocks return to base, drop off, and refuel.
-        serviceAtBase()
+        serviceAtBase(false)
 
         currentDepth = currentDepth + DROP_PER_LEVEL
 
