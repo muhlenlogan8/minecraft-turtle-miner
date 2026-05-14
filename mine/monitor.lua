@@ -57,6 +57,7 @@ local function drawTurtles(data)
         local statusText = tostring(turtleData.status or "unknown")
         local modeText = tostring(turtleData.mode or "unknown")
         local message = truncate(turtleData.message or "", 40)
+        local levelText = tostring(turtleData.level or "-")
 
         if turtleData.online then
             writeLine(label .. " [ONLINE]", colors.green)
@@ -66,6 +67,7 @@ local function drawTurtles(data)
 
         writeLine("ID: " .. tostring(id) .. "  Mode: " .. modeText)
         writeLine("Status: " .. statusText)
+        writeLine("Level: " .. levelText)
         writeLine("Msg: " .. message)
 
         local fuel = tonumber(turtleData.fuel) or 0

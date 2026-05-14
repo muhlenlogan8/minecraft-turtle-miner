@@ -134,26 +134,22 @@ local function waitForSafeFuel()
     )
 end
 
-local function serviceAtBase(fullService)
+local function serviceAtBase()
     print("Returning to base for dropoff/refuel")
     status.setStatus("running", "servicing", "Returning to base for dropoff/refuel")
     
-    -- Go back to base but keep path if this is a full service (for returning to work position after)
-    if fullService then
-        history.returnToBase(true)
-    else
-        history.returnToBase(false)
-    end
+    -- Keep the mined path so the turtle can safely return to the work position.
+    history.returnToBase(true)
     
     dropOffItems()
-    if fullService then restockCoal() end
-    if turtle.getFuelLevel() < SAFETY_FUEL then
+    restockCoal()
+    if turtle.getFuelLevel() < math.max(SAFETY_FUEL, history.fuelNeededForAnotherGo()) then
         waitForSafeFuel()
     end
     
     -- Return to exact strip-mining spot
     status.setStatus("running", "strip_mining", "Returned to work position")
-    if fullService then history.goBackToWork() end
+    history.goBackToWork()
     history.useMain()
     
     print("Returned to work position")
@@ -200,7 +196,7 @@ end
 
 local function mineOneStep()
     if needsService() then
-        serviceAtBase(true)
+        serviceAtBase()
     end
 
     turtle.dig()
@@ -239,7 +235,7 @@ end
 local function goDownToNextLevel()
     for i = 1, DROP_PER_LEVEL do
         if needsService() then
-            serviceAtBase(true)
+            serviceAtBase()
         end
 
         if not goDownOne() then
@@ -252,7 +248,7 @@ end
 
 local function stripMine()
     history.useMain()
-    status.setStatus("running", "strip_mining", "Starting miner", history.fuelNeededToBase())
+    status.setStatus("running", "strip_mining", "Starting miner", history.fuelNeededToBase(), 1)
 
     print("Starting fuel:", turtle.getFuelLevel())
 
@@ -262,7 +258,7 @@ local function stripMine()
 
     while level <= MAX_LEVELS and not shouldStop do
         print("Starting level:", level)
-        status.setStatus("running", "strip_mining", "Mining level " .. level, history.fuelNeededToBase())
+        status.setStatus("running", "strip_mining", "Mining level " .. level, history.fuelNeededToBase(), level)
 
         -- Mine 350 blocks forward on this level
         for step = 1, STRIP_LENGTH do
@@ -271,11 +267,11 @@ local function stripMine()
         end
 
         -- After 350 blocks service at base before going down to next level
-        serviceAtBase(false)
+        serviceAtBase()
 
         -- After service, go down 2 blocks
         print("Finished level " .. level .. ". Going down " .. DROP_PER_LEVEL .. " blocks.")
-        status.setStatus("running", "descending", "Going down to next level", history.fuelNeededToBase())
+        status.setStatus("running", "descending", "Going down to next level", history.fuelNeededToBase(), level)
 
         for drop = 1, level do
             if not goDownToNextLevel() then
@@ -288,14 +284,14 @@ local function stripMine()
         level = level + 1
     end
 
-    status.setStatus("running", "returning", "Returning to base", history.fuelNeededToBase())
+    status.setStatus("running", "returning", "Returning to base", history.fuelNeededToBase(), level)
 
     history.returnToBase(false)
 
     dropOffItems()
     restockCoal()
 
-    status.setStatus("idle", "done", "Returned to base", history.fuelNeededToBase())
+    status.setStatus("idle", "done", "Returned to base", history.fuelNeededToBase(), level)
 end
 
 stripMine()

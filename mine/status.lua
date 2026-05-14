@@ -5,11 +5,15 @@ local API_URL = "https://minecraft-turtle.up.railway.app/status"
 local currentStatus = "idle"
 local currentMode = "none"
 local fuelNeeded = 0
+local currentLevel = nil
 
-function Status.setStatus(status, mode, message, fuelNeededToBase)
+function Status.setStatus(status, mode, message, fuelNeededToBase, level)
     currentStatus = status
     currentMode = mode or currentMode
     fuelNeeded = fuelNeededToBase or 0
+    if level ~= nil then
+        currentLevel = level
+    end
     Status.heartbeat(message)
 end
 
@@ -26,6 +30,7 @@ function Status.heartbeat(message)
         mode = currentMode,
         fuel = turtle.getFuelLevel(),
         steps_from_base = fuelNeeded,
+        level = currentLevel,
         message = message or ""
     })
 
