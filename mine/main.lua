@@ -43,8 +43,7 @@ local function dropOffItems()
         
         local item = turtle.getItemDetail(slot)
         
-        -- Keep coal, drop everything else
-        if item and item.name ~= "minecraft:coal" then
+        if item then
             turtle.drop()
         end
     end
@@ -93,7 +92,7 @@ local function restockCoal()
     -- No chest found, face strip mine direction again
     turtle.turnRight()
 
-    print("No coal chest found for refueling!")
+    print("No fuel chest found for refueling!")
     return false
 end
 
@@ -138,8 +137,8 @@ local function serviceAtBase()
     print("Returning to base for dropoff/refuel")
     status.setStatus("running", "servicing", "Returning to base for dropoff/refuel")
     
-    -- Keep the mined path so the turtle can safely return to the work position.
-    history.returnToBase(true)
+    -- Return to base and clear the current strip path.
+    history.returnToBase(false)
     
     dropOffItems()
     restockCoal()
@@ -147,12 +146,9 @@ local function serviceAtBase()
         waitForSafeFuel()
     end
     
-    -- Return to exact strip-mining spot
-    status.setStatus("running", "strip_mining", "Returned to work position")
-    history.goBackToWork()
     history.useMain()
     
-    print("Returned to work position")
+    print("Returned to base")
 end
 
 local function needsService()
@@ -232,12 +228,8 @@ local function mineOneStep()
     end
 end
 
-local function goDownToNextLevel()
-    for i = 1, DROP_PER_LEVEL do
-        if needsService() then
-            serviceAtBase()
-        end
-
+local function goDownBlocks(blockCount)
+    for i = 1, blockCount do
         if not goDownOne() then
             return false
         end
@@ -253,10 +245,22 @@ local function stripMine()
     print("Starting fuel:", turtle.getFuelLevel())
 
     local level = 1
+    local currentDepth = 0
 
     local shouldStop = false
 
     while level <= MAX_LEVELS and not shouldStop do
+        if currentDepth > 0 then
+            print("Descending", currentDepth, "blocks for level", level)
+            status.setStatus("running", "descending", "Going down to level " .. level, history.fuelNeededToBase(), level)
+
+            if not goDownBlocks(currentDepth) then
+                print("Hit bottom or cannot go lower. Stopping.")
+                shouldStop = true
+                break
+            end
+        end
+
         print("Starting level:", level)
         status.setStatus("running", "strip_mining", "Mining level " .. level, history.fuelNeededToBase(), level)
 
@@ -266,20 +270,10 @@ local function stripMine()
             mineOneStep()
         end
 
-        -- After 350 blocks service at base before going down to next level
+        -- After 350 blocks return to base, drop off, and refuel.
         serviceAtBase()
 
-        -- After service, go down 2 blocks
-        print("Finished level " .. level .. ". Going down " .. DROP_PER_LEVEL .. " blocks.")
-        status.setStatus("running", "descending", "Going down to next level", history.fuelNeededToBase(), level)
-
-        for drop = 1, level do
-            if not goDownToNextLevel() then
-                print("Hit bottom or cannot go lower. Stopping.")
-                shouldStop = true
-                break
-            end
-        end
+        currentDepth = currentDepth + DROP_PER_LEVEL
 
         level = level + 1
     end

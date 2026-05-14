@@ -10,7 +10,7 @@ function Fuel.countCoal()
     for slot = 1, 16 do
         local item = turtle.getItemDetail(slot)
         
-        if item and item.name == "minecraft:coal" then
+        if item and (item.name == "minecraft:coal" or item.name == "minecraft:charcoal") then
             count = count + item.count
         end
     end
@@ -27,8 +27,8 @@ function Fuel.refuelFromInventory()
     for slot = 1, 16 do
         local item = turtle.getItemDetail(slot)
         
-        if item and item.name == "minecraft:coal" then
-            status.heartbeat("Refueling from coal inventory")
+        if item and (item.name == "minecraft:coal" or item.name == "minecraft:charcoal") then
+            status.heartbeat("Refueling from fuel inventory")
             turtle.select(slot)
             local count = item.count
             while count > 0 and turtle.getFuelLevel() < 1000 do
