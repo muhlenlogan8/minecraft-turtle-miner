@@ -84,41 +84,64 @@ end
 function History.returnToBase(keepPath)
     Status.setStatus("returning", nil, "Returning to base", History.fuelNeededToBase())
 
+    local success = true
+
     for i = #History.mainReverse, 1, -1 do
-        run(History.mainReverse[i])
+        if not run(History.mainReverse[i]) then
+            success = false
+            break
+        end
         Status.setStepsFromBase(i - 1)
         Status.heartbeat("Returning to base")
     end
 
-    Status.setStepsFromBase(0)
+    if success then
+        Status.setStepsFromBase(0)
+    end
 
-    if not keepPath then
+    if success and not keepPath then
         History.mainReverse = {}
         History.mainForward = {}
     end
+
+    return success
 end
 
 function History.goBackToWork()
     Status.setStatus("resuming", nil, "Going back to work", History.fuelNeededForAnotherGo())
 
+    local success = true
+
     for i = 1, #History.mainForward do
-        run(History.mainForward[i])
+        if not run(History.mainForward[i]) then
+            success = false
+            break
+        end
         Status.setStepsFromBase(i)
         Status.heartbeat("Going back to work")
     end
+
+    return success
 end
 
 function History.returnToStrip()
     Status.setStatus("returning_branch", nil, "Returning to strip", 0)
 
+    local success = true
+
     for i = #History.branchMoves, 1, -1 do
-        run(History.branchMoves[i])
+        if not run(History.branchMoves[i]) then
+            success = false
+            break
+        end
         Status.heartbeat("Returning to strip")
     end
 
     History.branchMoves = {}
     History.active = "main"
     Status.setStepsFromBase(History.fuelNeededToBase())
+
+    return success
 end
 
 function History.clearBranch()

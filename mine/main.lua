@@ -5,7 +5,7 @@ local status = require("status")
 
 local SAFETY_FUEL = 80
 local STRIP_LENGTH = 350
-local DROP_PER_LEVEL = 2
+local DROP_PER_LEVEL = 1
 local MAX_LEVELS = 60 -- Optional safety limit just in case
 
 local function turnAround()
@@ -137,10 +137,17 @@ local function serviceAtBase(keepPath)
     print("Returning to base for dropoff/refuel")
     status.setStatus("running", "servicing", "Returning to base for dropoff/refuel")
     
+    local reachedBase
+
     if keepPath then
-        history.returnToBase(true)
+        reachedBase = history.returnToBase(true)
     else
-        history.returnToBase(false)
+        reachedBase = history.returnToBase(false)
+    end
+
+    if not reachedBase then
+        print("Could not reach base. Skipping refuel.")
+        return false
     end
     
     dropOffItems()
@@ -151,12 +158,16 @@ local function serviceAtBase(keepPath)
     
     if keepPath then
         status.setStatus("running", "strip_mining", "Returned to work position")
-        history.goBackToWork()
+        if not history.goBackToWork() then
+            print("Could not return to work position.")
+            return false
+        end
     end
     
     history.useMain()
     
     print("Returned to base")
+    return true
 end
 
 local function needsService()
@@ -200,7 +211,9 @@ end
 
 local function mineOneStep()
     if needsService() then
-        serviceAtBase(true)
+        if not serviceAtBase(true) then
+            return false
+        end
     end
 
     turtle.dig()
@@ -234,12 +247,16 @@ local function mineOneStep()
     if inspectDownForOre() then
         vein.mineVein()
     end
+
+    return true
 end
 
 local function goDownBlocks(blockCount)
     for i = 1, blockCount do
         if needsService() then
-            serviceAtBase(true)
+            if not serviceAtBase(true) then
+                return false
+            end
         end
 
         if not goDownOne() then
@@ -279,11 +296,21 @@ local function stripMine()
         -- Mine 350 blocks forward on this level
         for step = 1, STRIP_LENGTH do
             status.heartbeat("Level " .. level .. " | step " .. step .. "/" .. STRIP_LENGTH)
-            mineOneStep()
+            if not mineOneStep() then
+                shouldStop = true
+                break
+            end
+        end
+
+        if shouldStop then
+            break
         end
 
         -- After 350 blocks return to base, drop off, and refuel.
-        serviceAtBase(false)
+        if not serviceAtBase(false) then
+            shouldStop = true
+            break
+        end
 
         currentDepth = currentDepth + DROP_PER_LEVEL
 
