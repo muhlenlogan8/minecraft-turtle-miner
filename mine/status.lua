@@ -6,9 +6,14 @@ local currentStatus = "idle"
 local currentMode = "none"
 local fuelNeeded = 0
 local currentLevel = nil
+local actualDistance = 0
 
 function Status.setStepsFromBase(stepsFromBase)
     fuelNeeded = math.max(0, tonumber(stepsFromBase) or 0)
+end
+
+function Status.setActualDistanceFromBase(distanceFromBase)
+    actualDistance = math.max(0, tonumber(distanceFromBase) or 0)
 end
 
 function Status.setStatus(status, mode, message, fuelNeededToBase, level)
@@ -36,6 +41,7 @@ function Status.heartbeat(message)
         mode = currentMode,
         fuel = turtle.getFuelLevel(),
         steps_from_base = fuelNeeded,
+        actual_distance_from_base = actualDistance,
         level = currentLevel,
         message = message or ""
     })

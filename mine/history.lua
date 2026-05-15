@@ -6,6 +6,12 @@ History.mainReverse = {}
 History.mainForward = {}
 History.branchMoves = {}
 History.active = "main"
+History.currentDistance = 0
+
+local function setCurrentDistance(distance)
+    History.currentDistance = math.max(0, tonumber(distance) or 0)
+    Status.setActualDistanceFromBase(History.currentDistance)
+end
 
 local reverseOf = {
     forward = "back",
@@ -37,6 +43,7 @@ local function save(move)
             table.insert(History.mainReverse, reverseMove)
             table.insert(History.mainForward, move)
             Status.setStepsFromBase(History.fuelNeededToBase())
+            setCurrentDistance(History.currentDistance + 1)
         end
     else
         table.insert(History.branchMoves, reverseMove)
@@ -53,12 +60,14 @@ end
 
 function History.useMain()
     History.active = "main"
+    setCurrentDistance(History.currentDistance)
     Status.setStatus("idle", nil, "Using main path", History.fuelNeededToBase())
 end
 
 function History.useBranch()
     History.branchMoves = {}
     History.active = "branch"
+    setCurrentDistance(History.currentDistance)
     Status.setStatus("branching", nil, "Started branch", 0)
 end
 
@@ -92,10 +101,12 @@ function History.returnToBase(keepPath)
             break
         end
         Status.setStepsFromBase(i - 1)
+        setCurrentDistance(History.currentDistance - 1)
         Status.heartbeat("Returning to base")
     end
 
     if success then
+        setCurrentDistance(0)
         Status.setStepsFromBase(0)
     end
 
@@ -118,6 +129,7 @@ function History.goBackToWork()
             break
         end
         Status.setStepsFromBase(i)
+        setCurrentDistance(History.currentDistance + 1)
         Status.heartbeat("Going back to work")
     end
 
@@ -140,6 +152,7 @@ function History.returnToStrip()
     History.branchMoves = {}
     History.active = "main"
     Status.setStepsFromBase(History.fuelNeededToBase())
+    setCurrentDistance(History.currentDistance)
 
     return success
 end
@@ -148,6 +161,7 @@ function History.clearBranch()
     History.branchMoves = {}
     History.active = "main"
     Status.setStepsFromBase(History.fuelNeededToBase())
+    setCurrentDistance(History.currentDistance)
 end
 
 function History.fuelNeededToBase()
@@ -156,6 +170,10 @@ end
 
 function History.fuelNeededForAnotherGo()
     return fuelNeeded(History.mainForward) * 2
+end
+
+function History.actualDistanceFromBase()
+    return History.currentDistance
 end
 
 return History
