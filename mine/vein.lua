@@ -143,9 +143,11 @@ local function mineConnectedOre(depth)
 
     return true
 end
+
 function Vein.mineConnectedOre()
     status.heartbeat("Mining Ore Vein")
     return mineConnectedOre(0)
+end
 
 function Vein.mineVein()
     Vein.mineConnectedOre()
@@ -160,6 +162,7 @@ function Vein.mineVein()
     end
 
     return success
+end
 
 return Vein
 
