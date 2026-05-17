@@ -7,19 +7,25 @@ local files = {
     "status.lua",
     "state.lua",
     "update.lua",
-    "startup.lua"
+    "startup.lua",
+    "config.lua"
 }
 
 local baseUrl = "https://raw.githubusercontent.com/muhlenlogan8/minecraft-turtle-miner/main/mine/"
 
 for _, file in ipairs(files) do
-    print(fs.exists("mine/" .. file))
-    if fs.exists("mine/" .. file) then
-        fs.delete("mine/" .. file)
+    local path = "mine/" .. file
+
+    if file == "config.lua" and fs.exists(path) then
+        print("Keeping existing:", file)
+    else
+        if fs.exists(path) then
+            fs.delete(path)
+        end
+
+        print("Updating:", file)
+        shell.run("wget", baseUrl .. file, path)
     end
-    
-    print("Updating:", file)
-    shell.run("wget", baseUrl .. file, "mine/" .. file)
 end
 
 print("Done")

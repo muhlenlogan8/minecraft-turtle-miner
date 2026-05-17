@@ -11,7 +11,6 @@ monitor.setTextScale(0.5)
 
 -- Configuration
 local PAGE_INTERVAL = 5 -- seconds to show each page
-local TURTLES_PER_PAGE = 5
 
 local pageIndex = 1
 
@@ -32,6 +31,40 @@ local function writeLine(text, color)
     monitor.setCursorPos(1, y + 1)
 
     monitor.setTextColor(colors.white)
+end
+
+local function statusColor(status)
+    status = tostring(status or ""):lower()
+
+    if status == "stuck" or status == "error" then
+        return colors.red
+    end
+
+    if status == "waiting_for_fuel" then
+        return colors.yellow
+    end
+
+    if status == "servicing" or status == "returning" or status == "resuming" or status == "descending" or status == "vein_mining" or status == "returning_branch" then
+        return colors.cyan
+    end
+
+    if status == "idle" or status == "running" or status == "mining" or status == "strip_mining" then
+        return colors.green
+    end
+
+    return colors.white
+end
+
+local function displayName(turtleData, id)
+    return turtleData.turtle_name or turtleData.label or ("Turtle " .. tostring(id))
+end
+
+local function turtlesPerPage()
+    local _, height = monitor.getSize()
+    local headerLines = 4
+    local linesPerTurtle = 10
+
+    return math.max(1, math.floor((height - headerLines - 1) / linesPerTurtle))
 end
 
 local function drawTurtles(data)
@@ -63,21 +96,28 @@ local function drawTurtles(data)
     for id, _ in pairs(data) do table.insert(ids, id) end
     table.sort(ids, function(a,b) return tonumber(a) < tonumber(b) end)
 
+    local perPage = turtlesPerPage()
     local totalTurtles = #ids
-    local totalPages = math.max(1, math.ceil(totalTurtles / TURTLES_PER_PAGE))
+    local totalPages = math.max(1, math.ceil(totalTurtles / perPage))
     pageIndex = ((pageIndex - 1) % totalPages) + 1
 
-    local startIdx = (pageIndex - 1) * TURTLES_PER_PAGE + 1
-    local endIdx = math.min(totalTurtles, startIdx + TURTLES_PER_PAGE - 1)
+    local startIdx = (pageIndex - 1) * perPage + 1
+    local endIdx = math.min(totalTurtles, startIdx + perPage - 1)
 
     for idx = startIdx, endIdx do
         local id = ids[idx]
         local turtleData = data[id]
-        local label = turtleData.label or ("Turtle " .. id)
+        local label = displayName(turtleData, id)
+        local mineId = tostring(turtleData.mine_id or "-")
+        local stripId = tostring(turtleData.strip_id or "-")
         local statusText = tostring(turtleData.status or "unknown")
         local modeText = tostring(turtleData.mode or "unknown")
-        local message = truncate(turtleData.message or "", 40)
+        local message = truncate(turtleData.message or "", 44)
+        local errorReason = truncate(turtleData.error_reason or "", 44)
         local levelText = tostring(turtleData.level or "-")
+        local identityColor = turtleData.online and colors.green or colors.red
+        local stateColor = statusColor(statusText)
+        local messageColor = (statusText == "stuck" or statusText == "error") and colors.red or colors.white
 
         if turtleData.online then
             writeLine(label .. " [ONLINE]", colors.green)
@@ -85,10 +125,13 @@ local function drawTurtles(data)
             writeLine(label .. " [OFFLINE]", colors.red)
         end
 
-        writeLine("ID: " .. tostring(id) .. "  Mode: " .. modeText)
-        writeLine("Status: " .. statusText)
-        writeLine("Level: " .. levelText)
-        writeLine("Msg: " .. message)
+        writeLine("ID: " .. tostring(id) .. "  Mine: " .. mineId .. "  Strip: " .. stripId, identityColor)
+        writeLine("Status: " .. statusText .. "  Mode: " .. modeText, stateColor)
+        writeLine("Level: " .. levelText .. "  Age: " .. tostring(turtleData.age_seconds) .. "s")
+        writeLine("Msg: " .. message, messageColor)
+        if errorReason ~= "" then
+            writeLine("Err: " .. errorReason, colors.red)
+        end
 
         local fuel = tonumber(turtleData.fuel) or 0
         local steps = tostring(turtleData.actual_distance_from_base or turtleData.steps_from_base or "-")
@@ -97,8 +140,6 @@ local function drawTurtles(data)
         if fuel < 100 then fuelColor = colors.red elseif fuel < 300 then fuelColor = colors.yellow end
         writeLine("Fuel: " .. tostring(turtleData.fuel), fuelColor)
         writeLine("Distance from base: " .. steps .. " blocks", stepsColor)
-
-        writeLine("Seen: " .. tostring(turtleData.age_seconds) .. "s ago")
         writeLine(string.rep("-", 20))
     end
 
@@ -119,8 +160,14 @@ while true do
         local data = textutils.unserializeJSON(body)
         drawTurtles(data)
         -- advance page
-        local count = 0 for _ in pairs(data) do count = count + 1 end
-        local totalPages = math.max(1, math.ceil(count / TURTLES_PER_PAGE))
+        local count = 0
+        if data then
+            for _ in pairs(data) do
+                count = count + 1
+            end
+        end
+
+        local totalPages = math.max(1, math.ceil(count / turtlesPerPage()))
         if totalPages > 1 then
             pageIndex = pageIndex % totalPages + 1
         else

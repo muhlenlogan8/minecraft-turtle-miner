@@ -209,43 +209,60 @@ local function inspectDownForOre()
     return found and isOre(block)
 end
 
-local function mineOneStep()
+local function mineOneStep(level, step)
+    status.setStatus(
+        "running",
+        "mining",
+        "Mining level " .. tostring(level) .. " step " .. tostring(step),
+        history.fuelNeededToBase(),
+        level
+    )
+
     if needsService() then
         if not serviceAtBase(true) then
+            status.setError("stuck", "servicing", "Failed servicing at base", history.fuelNeededToBase(), level)
             return false
         end
     end
 
     turtle.dig()
-    history.forward()
+    if not history.forward() then
+        status.setError("stuck", "strip_mining", "Failed to advance on level " .. tostring(level), history.fuelNeededToBase(), level)
+        return false
+    end
 
     -- Check front
     if inspectForOre() then
-        vein.mineVein()
+        status.setStatus("running", "vein_mining", "Mining vein ahead", history.fuelNeededToBase(), level)
+        if not vein.mineVein() then return false end
     end
 
     -- Check left
     turtle.turnLeft()
     if inspectForOre() then
-        vein.mineVein()
+        status.setStatus("running", "vein_mining", "Mining vein on left", history.fuelNeededToBase(), level)
+        if not vein.mineVein() then return false end
     end
     turtle.turnRight()
 
     -- Check right
     turtle.turnRight()
     if inspectForOre() then
-        vein.mineVein()
+        status.setStatus("running", "vein_mining", "Mining vein on right", history.fuelNeededToBase(), level)
+        if not vein.mineVein() then return false end
     end
     turtle.turnLeft()
 
     -- Check up
     if inspectUpForOre() then
-        vein.mineVein()
+        status.setStatus("running", "vein_mining", "Mining vein above", history.fuelNeededToBase(), level)
+        if not vein.mineVein() then return false end
     end
 
     -- Check down
     if inspectDownForOre() then
-        vein.mineVein()
+        status.setStatus("running", "vein_mining", "Mining vein below", history.fuelNeededToBase(), level)
+        if not vein.mineVein() then return false end
     end
 
     return true
@@ -295,8 +312,7 @@ local function stripMine()
 
         -- Mine 350 blocks forward on this level
         for step = 1, STRIP_LENGTH do
-            status.heartbeat("Level " .. level .. " | step " .. step .. "/" .. STRIP_LENGTH)
-            if not mineOneStep() then
+            if not mineOneStep(level, step) then
                 shouldStop = true
                 break
             end
@@ -319,7 +335,9 @@ local function stripMine()
 
     status.setStatus("running", "returning", "Returning to base", history.fuelNeededToBase(), level)
 
-    history.returnToBase(false)
+    if not history.returnToBase(false) then
+        return
+    end
 
     dropOffItems()
     restockCoal()

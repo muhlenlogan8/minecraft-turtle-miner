@@ -26,15 +26,94 @@ local function isFuelMove(move)
     return move == "forward" or move == "back" or move == "up" or move == "down"
 end
 
+local safeForward
+local safeBack
+local safeUp
+local safeDown
+
 local function run(move)
-    if move == "forward" then return turtle.forward()
-    elseif move == "back" then return turtle.back()
-    elseif move == "up" then return turtle.up()
-    elseif move == "down" then return turtle.down()
+    if move == "forward" then return safeForward()
+    elseif move == "back" then return safeBack()
+    elseif move == "up" then return safeUp()
+    elseif move == "down" then return safeDown()
     elseif move == "turnLeft" then turtle.turnLeft(); return true
     elseif move == "turnRight" then turtle.turnRight(); return true
     end
 end
+
+local function reportStuck(mode, message)
+    if mode == "branch" then
+        mode = "vein_mining"
+    end
+
+    Status.setError("stuck", mode or History.active, message, History.fuelNeededToBase())
+end
+
+safeForward = function()
+    for _ = 1, 5 do
+        if turtle.forward() then
+            return true
+        end
+
+        turtle.dig()
+        turtle.attack()
+        sleep(0.2)
+    end
+
+    return false
+end
+
+safeBack = function()
+    for _ = 1, 5 do
+        if turtle.back() then
+            return true
+        end
+
+        turtle.turnLeft()
+        turtle.turnLeft()
+        turtle.dig()
+        turtle.attack()
+        turtle.turnLeft()
+        turtle.turnLeft()
+        sleep(0.2)
+    end
+
+    return false
+end
+
+safeUp = function()
+    for _ = 1, 5 do
+        if turtle.up() then
+            return true
+        end
+
+        turtle.digUp()
+        turtle.attackUp()
+        sleep(0.2)
+    end
+
+    return false
+end
+
+safeDown = function()
+    for _ = 1, 5 do
+        if turtle.down() then
+            return true
+        end
+
+        turtle.digDown()
+        turtle.attackDown()
+        sleep(0.2)
+    end
+
+    return false
+end
+
+History.safeForward = safeForward
+History.safeBack = safeBack
+History.safeUp = safeUp
+History.safeDown = safeDown
+
 local function save(move)
     local reverseMove = reverseOf[move]
 
@@ -55,28 +134,47 @@ local function moveTracked(move)
         save(move)
         return true
     end
+
+    reportStuck(History.active, "Failed move: " .. move)
     return false
 end
 
 function History.useMain()
     History.active = "main"
     setCurrentDistance(History.currentDistance)
-    Status.setStatus("idle", nil, "Using main path", History.fuelNeededToBase())
+    Status.setStatus("idle", "main", "Using main path", History.fuelNeededToBase())
 end
 
 function History.useBranch()
     History.branchMoves = {}
     History.active = "branch"
     setCurrentDistance(History.currentDistance)
-    Status.setStatus("branching", nil, "Started branch", 0)
+    Status.setStatus("running", "vein_mining", "Started branch", History.fuelNeededToBase())
 end
 
-function History.forward() return moveTracked("forward") end
-function History.back() return moveTracked("back") end
-function History.up() return moveTracked("up") end
-function History.down() return moveTracked("down") end
-function History.turnLeft() return moveTracked("turnLeft") end
-function History.turnRight() return moveTracked("turnRight") end
+function History.forward()
+    return moveTracked("forward")
+end
+
+function History.back()
+    return moveTracked("back")
+end
+
+function History.up()
+    return moveTracked("up")
+end
+
+function History.down()
+    return moveTracked("down")
+end
+
+function History.turnLeft()
+    return moveTracked("turnLeft")
+end
+
+function History.turnRight()
+    return moveTracked("turnRight")
+end
 
 local function fuelNeeded(moves)
     local fuel = 0
@@ -91,13 +189,21 @@ local function fuelNeeded(moves)
 end
 
 function History.returnToBase(keepPath)
-    Status.setStatus("returning", nil, "Returning to base", History.fuelNeededToBase())
+    Status.setStatus("returning", "returning", "Returning to base", History.fuelNeededToBase())
 
     local success = true
+    local totalMoves = #History.mainReverse
 
-    for i = #History.mainReverse, 1, -1 do
-        if not run(History.mainReverse[i]) then
+    for i = totalMoves, 1, -1 do
+        local move = History.mainReverse[i]
+        if not run(move) then
             success = false
+            Status.setError(
+                "stuck",
+                "returning",
+                "Failed returning to base on move " .. i .. "/" .. totalMoves .. ": " .. tostring(move),
+                History.fuelNeededToBase()
+            )
             break
         end
         Status.setStepsFromBase(i - 1)
@@ -119,13 +225,20 @@ function History.returnToBase(keepPath)
 end
 
 function History.goBackToWork()
-    Status.setStatus("resuming", nil, "Going back to work", History.fuelNeededForAnotherGo())
+    Status.setStatus("resuming", "resuming", "Going back to work", History.fuelNeededForAnotherGo())
 
     local success = true
 
     for i = 1, #History.mainForward do
-        if not run(History.mainForward[i]) then
+        local move = History.mainForward[i]
+        if not run(move) then
             success = false
+            Status.setError(
+                "stuck",
+                "resuming",
+                "Failed going back to work on move " .. i .. "/" .. #History.mainForward,
+                History.fuelNeededForAnotherGo()
+            )
             break
         end
         Status.setStepsFromBase(i)
@@ -137,22 +250,31 @@ function History.goBackToWork()
 end
 
 function History.returnToStrip()
-    Status.setStatus("returning_branch", nil, "Returning to strip", 0)
+    Status.setStatus("returning_branch", "returning_branch", "Returning to strip", 0)
 
     local success = true
 
     for i = #History.branchMoves, 1, -1 do
-        if not run(History.branchMoves[i]) then
+        local move = History.branchMoves[i]
+        if not run(move) then
             success = false
+            Status.setError(
+                "stuck",
+                "returning_branch",
+                "Failed returning from vein",
+                History.fuelNeededToBase()
+            )
             break
         end
         Status.heartbeat("Returning to strip")
     end
 
-    History.branchMoves = {}
-    History.active = "main"
-    Status.setStepsFromBase(History.fuelNeededToBase())
-    setCurrentDistance(History.currentDistance)
+    if success then
+        History.branchMoves = {}
+        History.active = "main"
+        Status.setStepsFromBase(History.fuelNeededToBase())
+        setCurrentDistance(History.currentDistance)
+    end
 
     return success
 end
