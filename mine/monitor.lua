@@ -11,7 +11,7 @@ monitor.setTextScale(0.5)
 
 -- Configuration
 local PAGE_INTERVAL = 5 -- seconds to show each page
-local TURTLES_PER_PAGE = 5
+local TURTLES_PER_PAGE = 6
 
 local pageIndex = 1
 
@@ -131,7 +131,6 @@ local function drawTurtles(data)
             writeLine(label .. " [OFFLINE]", colors.red)
         end
 
-        writeLine("ID: " .. tostring(id), identityColor)
         writeLine("Status: " .. statusText .. "  Mode: " .. modeText, stateColor)
         writeLine("Level: " .. levelText .. "  Age: " .. tostring(turtleData.age_seconds) .. "s")
         writeLine("Msg: " .. message, messageColor)
