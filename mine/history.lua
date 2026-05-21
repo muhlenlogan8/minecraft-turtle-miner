@@ -118,12 +118,14 @@ local function save(move)
     local reverseMove = reverseOf[move]
 
     if History.active == "main" then
+        table.insert(History.mainReverse, reverseMove)
+        table.insert(History.mainForward, move)
+
         if isFuelMove(move) then
-            table.insert(History.mainReverse, reverseMove)
-            table.insert(History.mainForward, move)
-            Status.setStepsFromBase(History.fuelNeededToBase())
             setCurrentDistance(History.currentDistance + 1)
         end
+
+        Status.setStepsFromBase(History.fuelNeededToBase())
     else
         table.insert(History.branchMoves, reverseMove)
     end
@@ -139,10 +141,10 @@ local function moveTracked(move)
     return false
 end
 
-function History.useMain()
+function History.useMain(modeName)
     History.active = "main"
     setCurrentDistance(History.currentDistance)
-    Status.setStatus("idle", "main", "Using main path", History.fuelNeededToBase())
+    Status.setStatus("idle", modeName or "main", "Using main path", History.fuelNeededToBase())
 end
 
 function History.useBranch()
@@ -176,10 +178,14 @@ function History.turnRight()
     return moveTracked("turnRight")
 end
 
-local function fuelNeeded(moves)
+local function fuelNeeded(moves, startIndex, endIndex)
     local fuel = 0
+    local firstIndex = startIndex or 1
+    local lastIndex = endIndex or #moves
 
-    for _, move in ipairs(moves) do
+    for index = firstIndex, lastIndex do
+        local move = moves[index]
+
         if move == "forward" or move == "back" or move == "up" or move == "down" then
 
             fuel = fuel + 1
@@ -206,8 +212,12 @@ function History.returnToBase(keepPath)
             )
             break
         end
-        Status.setStepsFromBase(i - 1)
-        setCurrentDistance(History.currentDistance - 1)
+
+        Status.setStepsFromBase(fuelNeeded(History.mainReverse, 1, i - 1))
+
+        if isFuelMove(move) then
+            setCurrentDistance(History.currentDistance - 1)
+        end
         Status.heartbeat("Returning to base")
     end
 
@@ -241,8 +251,12 @@ function History.goBackToWork()
             )
             break
         end
-        Status.setStepsFromBase(i)
-        setCurrentDistance(History.currentDistance + 1)
+
+        Status.setStepsFromBase(fuelNeeded(History.mainForward, 1, i))
+
+        if isFuelMove(move) then
+            setCurrentDistance(History.currentDistance + 1)
+        end
         Status.heartbeat("Going back to work")
     end
 

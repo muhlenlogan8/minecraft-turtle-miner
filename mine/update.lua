@@ -8,7 +8,8 @@ local files = {
     "state.lua",
     "update.lua",
     "startup.lua",
-    "config.lua"
+    "config.lua",
+    "quarry.lua",
 }
 
 local baseUrl = "https://raw.githubusercontent.com/muhlenlogan8/minecraft-turtle-miner/main/mine/"

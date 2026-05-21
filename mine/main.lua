@@ -164,7 +164,7 @@ local function serviceAtBase(keepPath)
         end
     end
     
-    history.useMain()
+    history.useMain("strip_mining")
     
     print("Returned to base")
     return true
@@ -285,7 +285,7 @@ local function goDownBlocks(blockCount)
 end
 
 local function stripMine()
-    history.useMain()
+    history.useMain("strip_mining")
     status.setStatus("running", "strip_mining", "Starting miner", history.fuelNeededToBase(), 1)
 
     print("Starting fuel:", turtle.getFuelLevel())
