@@ -36,7 +36,7 @@ def updateStatus():
 def refreshTurtle():
     data = request.get_json(force=True, silent=True) or {}
 
-    if data.get("clear_all"):
+    if not data or data.get("clear_all", True):
         turtles.clear()
         return {"ok": True, "message": "Cleared all turtle data"}
 
