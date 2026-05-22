@@ -268,7 +268,14 @@ end
 local function enterLayer(layer)
     status.setStatus("running", "quarry", "Entering layer " .. layer, history.fuelNeededToBase(), layer)
 
-    -- Always move one block forward from base before any descent.
+    -- Move out from base, then one more block so the quarry starts two blocks ahead.
+    turtle.dig()
+
+    if not history.forward() then
+        status.setError("stuck", "quarry", "Could not enter quarry area", history.fuelNeededToBase(), layer)
+        return false
+    end
+
     turtle.dig()
 
     if not history.forward() then
