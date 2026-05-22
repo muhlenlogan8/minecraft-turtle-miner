@@ -174,6 +174,17 @@ local function serviceAtBase(keepPath)
     return true
 end
 
+local function prepareForQuarryStart()
+    status.setStatus("running", "servicing", "Preparing quarry start")
+
+    restockCoal()
+    fuel.refuelFromInventory()
+
+    if turtle.getFuelLevel() < math.max(SAFETY_FUEL, history.fuelNeededForAnotherGo()) then
+        waitForSafeFuel()
+    end
+end
+
 local function needsService()
     local neededToBase = history.fuelNeededToBase()
 
@@ -343,6 +354,8 @@ local function quarryRun()
         status.setError("stuck", "quarry", "Invalid quarry dimensions. x/y/z must be >= 1", history.fuelNeededToBase(), 0)
         return
     end
+
+    prepareForQuarryStart()
 
     history.useMain("quarry")
     status.setStatus("running", "quarry", "Starting quarry x=" .. QUARRY_X .. " y=" .. QUARRY_Y .. " z=" .. QUARRY_Z, history.fuelNeededToBase(), 1)
