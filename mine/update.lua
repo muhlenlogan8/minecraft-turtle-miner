@@ -7,6 +7,7 @@ local files = {
     "status.lua",
     "state.lua",
     "update.lua",
+    "refresh.lua",
     "startup.lua",
     "config.lua",
     "quarry.lua",

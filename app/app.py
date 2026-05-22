@@ -31,6 +31,27 @@ def updateStatus():
     
     return {"ok": True, "turtle": turtles[turtle_id]}
 
+
+@app.post("/refresh")
+def refreshTurtle():
+    data = request.get_json(force=True, silent=True) or {}
+
+    if data.get("clear_all"):
+        turtles.clear()
+        return {"ok": True, "message": "Cleared all turtle data"}
+
+    turtle_id = str(data.get("id"))
+
+    if not turtle_id or turtle_id == "None":
+        return {"ok": False, "message": "Missing turtle ID"}, 400
+
+    removed = turtles.pop(turtle_id, None)
+
+    if removed is None:
+        return {"ok": False, "message": "Turtle not found"}, 404
+
+    return {"ok": True, "message": f"Cleared turtle data for {turtle_id}"}
+
 @app.get("/turtles")
 def getTurtles():
     now = time.time()
